@@ -6,7 +6,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/bootdotdev/learn-pub-sub-starter/internal/routing"
+	"github.com/vilebile17/peril/internal/routing"
 )
 
 const logsFile = "game.log"
@@ -17,7 +17,7 @@ func WriteLog(gamelog routing.GameLog) error {
 	log.Printf("received game log...")
 	time.Sleep(writeToDiskSleep)
 
-	f, err := os.OpenFile(logsFile, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	f, err := os.OpenFile(logsFile, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o644)
 	if err != nil {
 		return fmt.Errorf("could not open logs file: %v", err)
 	}
