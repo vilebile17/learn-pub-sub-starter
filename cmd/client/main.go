@@ -25,13 +25,13 @@ func main() {
 		log.Fatal(err)
 	}
 
-	ch, _, err := pubsub.DeclareAndBind(connection, routing.ExchangePerilDirect, routing.PauseKey+"."+username, routing.PauseKey, "transient")
-	if err != nil {
+	gameState := gamelogic.NewGameState(username)
+
+	handler := handlerPause(gameState)
+	if err = pubsub.SubscribeJSON(connection, routing.ExchangePerilDirect, "pause."+username, routing.PauseKey, "transient", handler); err != nil {
 		log.Fatal(err)
 	}
-	defer ch.Close()
 
-	gameState := gamelogic.NewGameState(username)
 	stillGoing := true
 	for stillGoing {
 		input := gamelogic.GetInput()
@@ -42,12 +42,12 @@ func main() {
 		switch input[0] {
 		case "spawn":
 			if err = gameState.CommandSpawn(input); err != nil {
-				fmt.Printf("There was an error when running the CommandSpawn command: %v", err)
+				fmt.Println(err)
 			}
 		case "move":
 			move, err := gameState.CommandMove(input)
 			if err != nil {
-				fmt.Printf("There was an error when running the CommandMove command: %v", err)
+				fmt.Println(err)
 			} else {
 				fmt.Println(move.Player, " made a move to ", move.ToLocation)
 			}

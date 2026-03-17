@@ -26,6 +26,12 @@ func main() {
 		log.Fatal(err)
 	}
 
+	gameLogsCH, _, err := pubsub.DeclareAndBind(connection, routing.ExchangePerilTopic, routing.GameLogSlug, routing.GameLogSlug+".*", "durable")
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer gameLogsCH.Close()
+
 	gamelogic.PrintServerHelp()
 	stillGoing := true
 	for stillGoing {
