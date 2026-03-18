@@ -1,22 +1,16 @@
 package pubsub
 
 import (
-	"errors"
-
 	amqp "github.com/rabbitmq/amqp091-go"
 )
 
-func DeclareAndBind(conn *amqp.Connection, exchange, queueName, key, queueType string) (*amqp.Channel, amqp.Queue, error) {
-	if queueType != "durable" && queueType != "transient" {
-		return nil, amqp.Queue{}, errors.New("queueType must be either 'durable' or 'transient'")
-	}
-
+func DeclareAndBind(conn *amqp.Connection, exchange, queueName, key string, queueType QueueType) (*amqp.Channel, amqp.Queue, error) {
 	ch, err := conn.Channel()
 	if err != nil {
 		return nil, amqp.Queue{}, err
 	}
 
-	q, err := ch.QueueDeclare(queueName, queueType == "durable", queueType == "transient", queueType == "transient", false, nil)
+	q, err := ch.QueueDeclare(queueName, queueType == Durable, queueType == Transient, queueType == Transient, false, nil)
 	if err != nil {
 		return nil, amqp.Queue{}, err
 	}

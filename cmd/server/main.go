@@ -26,7 +26,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	gameLogsCH, _, err := pubsub.DeclareAndBind(connection, routing.ExchangePerilTopic, routing.GameLogSlug, routing.GameLogSlug+".*", "durable")
+	gameLogsCH, _, err := pubsub.DeclareAndBind(connection, routing.ExchangePerilTopic, routing.GameLogSlug, routing.GameLogSlug+".*", pubsub.Durable)
 	if err != nil {
 		log.Fatal(err)
 	}
