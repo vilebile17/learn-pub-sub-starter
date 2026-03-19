@@ -2,6 +2,7 @@ package pubsub
 
 import (
 	amqp "github.com/rabbitmq/amqp091-go"
+	"github.com/vilebile17/peril/internal/routing"
 )
 
 func DeclareAndBind(conn *amqp.Connection, exchange, queueName, key string, queueType QueueType) (*amqp.Channel, amqp.Queue, error) {
@@ -10,7 +11,9 @@ func DeclareAndBind(conn *amqp.Connection, exchange, queueName, key string, queu
 		return nil, amqp.Queue{}, err
 	}
 
-	q, err := ch.QueueDeclare(queueName, queueType == Durable, queueType == Transient, queueType == Transient, false, nil)
+	q, err := ch.QueueDeclare(queueName, queueType == Durable, queueType == Transient, queueType == Transient, false, amqp.Table{
+		"x-dead-letter-exchange": routing.ExchangeDeadLetter,
+	})
 	if err != nil {
 		return nil, amqp.Queue{}, err
 	}
