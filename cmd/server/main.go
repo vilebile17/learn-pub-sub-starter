@@ -26,11 +26,10 @@ func main() {
 		log.Fatal(err)
 	}
 
-	gameLogsCH, _, err := pubsub.DeclareAndBind(connection, routing.ExchangePerilTopic, routing.GameLogSlug, routing.GameLogSlug+".*", pubsub.Durable)
+	err = pubsub.Subscribe(connection, routing.ExchangePerilTopic, routing.GameLogSlug, routing.GameLogSlug+".*", pubsub.Durable, handlerLogs(), pubsub.HandleSubscribeGob)
 	if err != nil {
 		log.Fatal(err)
 	}
-	defer gameLogsCH.Close()
 
 	gamelogic.PrintServerHelp()
 	stillGoing := true

@@ -27,11 +27,38 @@ func main() {
 
 	gameState := gamelogic.NewGameState(username)
 
-	if err = pubsub.SubscribeJSON(connection, routing.ExchangePerilDirect, "pause."+username, routing.PauseKey, pubsub.Transient, handlerPause(gameState)); err != nil {
+	if err = pubsub.Subscribe(connection,
+		routing.ExchangePerilDirect,
+		"pause."+username,
+		routing.PauseKey,
+		pubsub.Transient,
+		handlerPause(gameState),
+		pubsub.HandleSubscribeGob); err != nil {
 		log.Fatal(err)
 	}
 
-	if err = pubsub.SubscribeJSON(connection, routing.ExchangePerilTopic, "army_moves."+username, "army_moves.*", pubsub.Transient, handlerMove(gameState)); err != nil {
+	ch, err := connection.Channel()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	if err = pubsub.Subscribe(connection,
+		routing.ExchangePerilTopic,
+		routing.WarRecognitionsPrefix,
+		routing.WarRecognitionsPrefix+".*",
+		pubsub.Durable,
+		handlerWar(ch, gameState),
+		pubsub.HandleSubscribeGob); err != nil {
+		log.Fatal(err)
+	}
+
+	if err = pubsub.Subscribe(connection,
+		routing.ExchangePerilTopic,
+		"army_moves."+username,
+		"army_moves.*",
+		pubsub.Transient,
+		handlerMove(gameState, ch),
+		pubsub.HandleSubscribeGob); err != nil {
 		log.Fatal(err)
 	}
 
@@ -55,13 +82,13 @@ func main() {
 			}
 
 			fmt.Println(move.Player, " made a move to ", move.ToLocation)
-			ch, err := connection.Channel()
+			newCh, err := connection.Channel()
 			if err != nil {
 				fmt.Println(err)
 				break
 			}
 
-			if err = pubsub.PublishJSON(ch, routing.ExchangePerilTopic, "army_moves."+username, move); err != nil {
+			if err = pubsub.PublishGob(newCh, routing.ExchangePerilTopic, "army_moves."+username, move); err != nil {
 				fmt.Println(err)
 				break
 			}
