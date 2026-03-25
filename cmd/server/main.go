@@ -21,12 +21,17 @@ func main() {
 	defer connection.Close()
 	fmt.Println("Successfully started the server!")
 
-	AMQPch, err := connection.Channel()
+	publishCh, err := connection.Channel()
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	err = pubsub.Subscribe(connection, routing.ExchangePerilTopic, routing.GameLogSlug, routing.GameLogSlug+".*", pubsub.Durable, handlerLogs(), pubsub.HandleSubscribeGob)
+	err = pubsub.SubscribeGob(connection,
+		routing.ExchangePerilTopic,
+		routing.GameLogSlug,
+		routing.GameLogSlug+".*",
+		pubsub.Durable,
+		handlerLogs())
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -42,12 +47,12 @@ func main() {
 		switch input[0] {
 		case "pause":
 			fmt.Println("Pausing the game...")
-			if err = pubsub.PublishJSON(AMQPch, routing.ExchangePerilDirect, routing.PauseKey, routing.PlayingState{IsPaused: true}); err != nil {
+			if err = pubsub.PublishJSON(publishCh, routing.ExchangePerilDirect, routing.PauseKey, routing.PlayingState{IsPaused: true}); err != nil {
 				log.Fatal(err)
 			}
 		case "resume":
 			fmt.Println("Resuming the game...")
-			if err = pubsub.PublishJSON(AMQPch, routing.ExchangePerilDirect, routing.PauseKey, routing.PlayingState{IsPaused: false}); err != nil {
+			if err = pubsub.PublishJSON(publishCh, routing.ExchangePerilDirect, routing.PauseKey, routing.PlayingState{IsPaused: false}); err != nil {
 				log.Fatal(err)
 			}
 		case "quit":

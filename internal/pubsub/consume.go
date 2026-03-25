@@ -24,7 +24,29 @@ const (
 	Durable
 )
 
-func HandleSubscribeJSON[T any](data []byte) (T, error) {
+func SubscribeJSON[T any](
+	conn *amqp.Connection,
+	exchange,
+	queueName,
+	key string,
+	queueType QueueType,
+	handler func(T) AckType,
+) error {
+	return subscribe(conn, exchange, queueName, key, queueType, handler, handleSubscribeJSON)
+}
+
+func SubscribeGob[T any](
+	conn *amqp.Connection,
+	exchange,
+	queueName,
+	key string,
+	queueType QueueType,
+	handler func(T) AckType,
+) error {
+	return subscribe(conn, exchange, queueName, key, queueType, handler, handleSubscribeGob)
+}
+
+func handleSubscribeJSON[T any](data []byte) (T, error) {
 	var result T
 	if err := json.Unmarshal(data, &result); err != nil {
 		return result, err
@@ -33,7 +55,7 @@ func HandleSubscribeJSON[T any](data []byte) (T, error) {
 	return result, nil
 }
 
-func HandleSubscribeGob[T any](data []byte) (T, error) {
+func handleSubscribeGob[T any](data []byte) (T, error) {
 	var buffer bytes.Buffer
 	var result T
 	buffer.Write(data)
@@ -46,7 +68,7 @@ func HandleSubscribeGob[T any](data []byte) (T, error) {
 	return result, nil
 }
 
-func Subscribe[T any](
+func subscribe[T any](
 	conn *amqp.Connection,
 	exchange,
 	queueName,
@@ -85,8 +107,6 @@ func Subscribe[T any](
 			case NackRequeue:
 				if err = delivery.Nack(false, true); err != nil {
 					fmt.Println(err)
-				} else {
-					fmt.Println("Just Nacked and requeued")
 				}
 			case NackDiscard:
 				if err = delivery.Nack(false, false); err != nil {

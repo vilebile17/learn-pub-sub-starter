@@ -77,11 +77,11 @@ func handlerWar(publishCh *amqp.Channel, gs *gamelogic.GameState) func(gamelogic
 		case gamelogic.WarOutcomeNoUnits:
 			return pubsub.NackDiscard
 		case gamelogic.WarOutcomeOpponentWon:
-			fmt.Printf("%v won a war against %v", rw.Attacker.Username, rw.Defender.Username)
+			fmt.Printf("%v won a war against %v\n", rw.Attacker.Username, rw.Defender.Username)
 		case gamelogic.WarOutcomeYouWon:
-			fmt.Printf("%v won a war against %v", rw.Defender.Username, rw.Attacker.Username)
+			fmt.Printf("%v won a war against %v\n", rw.Defender.Username, rw.Attacker.Username)
 		case gamelogic.WarOutcomeDraw:
-			fmt.Printf("A war between %v and %v resulted in a draw", rw.Defender.Username, rw.Attacker.Username)
+			fmt.Printf("A war between %v and %v resulted in a draw\n", rw.Defender.Username, rw.Attacker.Username)
 		default:
 			fmt.Printf("Err, how did you get a different outcome: %v\n", outcome)
 			return pubsub.NackDiscard

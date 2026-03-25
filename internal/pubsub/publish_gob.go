@@ -15,10 +15,8 @@ func PublishGob[T any](ch *amqp.Channel, exchange, key string, val T) error {
 		return err
 	}
 
-	ch.PublishWithContext(context.Background(), exchange, key, false, false, amqp.Publishing{
+	return ch.PublishWithContext(context.Background(), exchange, key, false, false, amqp.Publishing{
 		ContentType: "application/gob",
 		Body:        buffer.Bytes(),
 	})
-
-	return nil
 }

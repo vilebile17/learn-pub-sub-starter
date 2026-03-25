@@ -25,41 +25,45 @@ func main() {
 		log.Fatal(err)
 	}
 
-	gameState := gamelogic.NewGameState(username)
-
-	if err = pubsub.Subscribe(connection,
-		routing.ExchangePerilDirect,
-		"pause."+username,
-		routing.PauseKey,
-		pubsub.Transient,
-		handlerPause(gameState),
-		pubsub.HandleSubscribeGob); err != nil {
-		log.Fatal(err)
-	}
-
-	ch, err := connection.Channel()
+	publishCh, err := connection.Channel()
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	if err = pubsub.Subscribe(connection,
+	gameState := gamelogic.NewGameState(username)
+
+	err = pubsub.SubscribeJSON(
+		connection,
+		routing.ExchangePerilTopic,
+		routing.ArmyMovesPrefix+"."+gameState.GetUsername(),
+		routing.ArmyMovesPrefix+".*",
+		pubsub.Transient,
+		handlerMove(gameState, publishCh),
+	)
+	if err != nil {
+		log.Fatalf("could not subscribe to army moves: %v", err)
+	}
+	err = pubsub.SubscribeJSON(
+		connection,
 		routing.ExchangePerilTopic,
 		routing.WarRecognitionsPrefix,
 		routing.WarRecognitionsPrefix+".*",
 		pubsub.Durable,
-		handlerWar(ch, gameState),
-		pubsub.HandleSubscribeGob); err != nil {
-		log.Fatal(err)
+		handlerWar(publishCh, gameState),
+	)
+	if err != nil {
+		log.Fatalf("could not subscribe to war declarations: %v", err)
 	}
-
-	if err = pubsub.Subscribe(connection,
-		routing.ExchangePerilTopic,
-		"army_moves."+username,
-		"army_moves.*",
+	err = pubsub.SubscribeJSON(
+		connection,
+		routing.ExchangePerilDirect,
+		routing.PauseKey+"."+gameState.GetUsername(),
+		routing.PauseKey,
 		pubsub.Transient,
-		handlerMove(gameState, ch),
-		pubsub.HandleSubscribeGob); err != nil {
-		log.Fatal(err)
+		handlerPause(gameState),
+	)
+	if err != nil {
+		log.Fatalf("could not subscribe to pause: %v", err)
 	}
 
 	stillGoing := true
@@ -81,14 +85,14 @@ func main() {
 				break
 			}
 
-			fmt.Println(move.Player, " made a move to ", move.ToLocation)
+			fmt.Println(move.Player.Username, "made a move to", move.ToLocation)
 			newCh, err := connection.Channel()
 			if err != nil {
 				fmt.Println(err)
 				break
 			}
 
-			if err = pubsub.PublishGob(newCh, routing.ExchangePerilTopic, "army_moves."+username, move); err != nil {
+			if err = pubsub.PublishJSON(newCh, routing.ExchangePerilTopic, "army_moves."+username, move); err != nil {
 				fmt.Println(err)
 				break
 			}
